@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getCart } from '../api/cart'
 import { useAuth } from '../context/AuthContext'
 import { placeOrder } from '../api/orders'
@@ -11,6 +11,7 @@ export default function CheckoutPage() {
   const { data } = useQuery({ queryKey: ['cart', userId], queryFn: () => getCart(userId), enabled: !!userId })
   const [address, setAddress] = useState('')
   const navigate = useNavigate()
+  const qc = useQueryClient()
 
   const items = data?.items || []
   const total = useMemo(() => items.reduce((sum, i) => sum + (i.price * i.quantity), 0), [items])
@@ -20,6 +21,8 @@ export default function CheckoutPage() {
     const payload = { products, total, user_id: userId, shipping_address: address }
     const res = await placeOrder(payload)
     if (res?.order_id) {
+      // Backend clears the cart; invalidate local cache and navigate
+      await qc.invalidateQueries({ queryKey: ['cart', userId] })
       navigate(`/orders/${res.order_id}`)
     }
   }

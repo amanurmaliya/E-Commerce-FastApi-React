@@ -3,10 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getCart, updateCartItem, removeCartItem } from '../api/cart'
 import { useAuth } from '../context/AuthContext'
 import { formatPrice } from '../utils/format'
+import { useNavigate } from 'react-router-dom'
 
 export default function CartPage() {
   const { userId } = useAuth()
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const { data, isLoading, isError } = useQuery({ queryKey: ['cart', userId], queryFn: () => getCart(userId), enabled: !!userId })
 
   const updateMut = useMutation({
@@ -39,10 +41,9 @@ export default function CartPage() {
         </div>
       ))}
       <div style={{ marginTop: 12 }}>
-        <div>Server total: {formatPrice(data.total_price)}</div>
         <div>Computed total: {formatPrice(computedTotal)}</div>
+        <button style={{ marginTop: 12 }} onClick={() => navigate('/checkout')} disabled={data.items.length === 0}>Proceed to Checkout</button>
       </div>
     </div>
   )
 }
-
